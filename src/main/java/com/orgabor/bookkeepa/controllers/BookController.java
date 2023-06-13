@@ -1,63 +1,93 @@
 package com.orgabor.bookkeepa.controllers;
 
 import com.orgabor.bookkeepa.data.Book;
+import com.orgabor.bookkeepa.data.BookService;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @AllArgsConstructor
 public class BookController {
 
-    private static final Map<Long, Book> books = new HashMap<>();
     private static final String NOT_FOUND_MESSAGE = "Book not found with id %s!";
-    private static Long bookId = 0L;
+    private BookService bookService;
 
     @GetMapping("/books/all")
     public ResponseEntity<Collection<Book>> getAll() {
-        return new ResponseEntity<>(books.values(), HttpStatus.OK);
+        try {
+            return new ResponseEntity<>(bookService.findAll(), HttpStatus.OK);
+        } catch (DataAccessException e) {
+            throw new ResponseStatusException(HttpStatus.FAILED_DEPENDENCY, e.getMessage());
+        }
     }
 
     @GetMapping("/books/{id}")
     public ResponseEntity<Book> getBook(@PathVariable Long id) {
-        Book book = books.get(id);
-        if (book == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(NOT_FOUND_MESSAGE, id));
-        } else {
+        try {
+            Book book = bookService.findById(id);
+            if (book == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(NOT_FOUND_MESSAGE, id));
+            }
             return new ResponseEntity<>(book, HttpStatus.OK);
+        } catch (DataAccessException e) {
+            throw new ResponseStatusException(HttpStatus.FAILED_DEPENDENCY, e.getMessage());
         }
     }
 
     @PostMapping("/books/add")
     public ResponseEntity<Book> addBook(@RequestBody Book newBook) {
-        bookId++;
-        newBook.setBookId(bookId);
-        books.put(newBook.getBookId(), newBook);
-        return new ResponseEntity<>(newBook, HttpStatus.CREATED);
+        try {
+            if (newBook.getBookId() != null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New book can not have a predefined ID!");
+            }
+            if (StringUtils.isBlank(newBook.getTitle())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New book has no title!");
+            }
+            newBook = bookService.save(newBook);
+            return new ResponseEntity<>(newBook, HttpStatus.CREATED);
+        } catch (DataAccessException e) {
+            throw new ResponseStatusException(HttpStatus.FAILED_DEPENDENCY, e.getMessage());
+        }
     }
 
     @PutMapping("/books/{id}/edit")
     public ResponseEntity<Book> editBook(@PathVariable Long id, @RequestBody Book book) {
-        if (books.get(id) == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(NOT_FOUND_MESSAGE, id));
+        try {
+            Book existingBook = bookService.findById(id);
+            if (existingBook == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(NOT_FOUND_MESSAGE, id));
+            }
+            if (!existingBook.getBookId().equals(book.getBookId())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Book ID can not be modified!");
+            }
+            if (StringUtils.isBlank(book.getTitle())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Book has no title!");
+            }
+            book = bookService.save(book);
+            return new ResponseEntity<>(book, HttpStatus.OK);
+        } catch (DataAccessException e) {
+            throw new ResponseStatusException(HttpStatus.FAILED_DEPENDENCY, e.getMessage());
         }
-        books.put(id, book);
-        return new ResponseEntity<>(book, HttpStatus.OK);
     }
 
     @DeleteMapping("/books/{id}/delete")
     public ResponseEntity<Book> deleteBook(@PathVariable Long id) {
-        if (books.get(id) == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(NOT_FOUND_MESSAGE, id));
-        } else {
-            books.remove(id);
+        try {
+            Book book = bookService.findById(id);
+            if (book == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, String.format(NOT_FOUND_MESSAGE, id));
+            }
+            bookService.delete(book);
             return new ResponseEntity<>(HttpStatus.OK);
+        } catch (DataAccessException e) {
+            throw new ResponseStatusException(HttpStatus.FAILED_DEPENDENCY, e.getMessage());
         }
     }
 }

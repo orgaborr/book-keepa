@@ -1,4 +1,6 @@
-package com.orgabor.bookkeepa.data;
+package com.orgabor.bookkeepa.data.service;
+
+import com.orgabor.bookkeepa.data.entity.Book;
 
 import java.util.List;
 

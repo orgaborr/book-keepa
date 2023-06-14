@@ -1,5 +1,7 @@
-package com.orgabor.bookkeepa.data;
+package com.orgabor.bookkeepa.data.service;
 
+import com.orgabor.bookkeepa.data.entity.Book;
+import com.orgabor.bookkeepa.data.repository.BookRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

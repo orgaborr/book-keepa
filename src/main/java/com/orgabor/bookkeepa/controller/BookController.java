@@ -1,11 +1,12 @@
-package com.orgabor.bookkeepa.controllers;
+package com.orgabor.bookkeepa.controller;
 
-import com.orgabor.bookkeepa.data.Book;
-import com.orgabor.bookkeepa.data.BookService;
+import com.orgabor.bookkeepa.data.entity.Book;
+import com.orgabor.bookkeepa.data.service.BookService;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.Collection;
 
 @RestController
+@RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
 @AllArgsConstructor
 public class BookController {
 
